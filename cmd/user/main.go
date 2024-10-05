@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"net"
+
 	"github.com/golang/protobuf/ptypes/empty"
 	desc "github.com/greenblat17/auth/pkg/user_v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"log"
-	"net"
 )
 
 const (
@@ -20,12 +21,12 @@ type server struct {
 	desc.UnimplementedUserV1Server
 }
 
-func (s *server) Create(ctx context.Context, req *desc.CreateRequest) (*desc.CreateResponse, error) {
+func (s *server) Create(_ context.Context, _ *desc.CreateRequest) (*desc.CreateResponse, error) {
 	return &desc.CreateResponse{
 		Id: 1,
 	}, nil
 }
-func (s *server) Get(ctx context.Context, req *desc.GetRequest) (*desc.GetResponse, error) {
+func (s *server) Get(_ context.Context, req *desc.GetRequest) (*desc.GetResponse, error) {
 	now := timestamppb.Now()
 
 	return &desc.GetResponse{
@@ -37,10 +38,10 @@ func (s *server) Get(ctx context.Context, req *desc.GetRequest) (*desc.GetRespon
 		UpdatedAt: now,
 	}, nil
 }
-func (s *server) Update(ctx context.Context, req *desc.UpdateRequest) (*empty.Empty, error) {
+func (s *server) Update(_ context.Context, _ *desc.UpdateRequest) (*empty.Empty, error) {
 	return &empty.Empty{}, nil
 }
-func (s *server) Delete(ctx context.Context, req *desc.DeleteRequest) (*empty.Empty, error) {
+func (s *server) Delete(_ context.Context, _ *desc.DeleteRequest) (*empty.Empty, error) {
 	return &empty.Empty{}, nil
 }
 
