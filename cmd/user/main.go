@@ -31,7 +31,7 @@ func (s *server) Get(_ context.Context, req *desc.GetRequest) (*desc.GetResponse
 
 	return &desc.GetResponse{
 		Id:        req.GetId(),
-		Name:      "name",
+		Name:      "NEW NAME",
 		Email:     "email",
 		Role:      desc.Role_USER,
 		CreatedAt: now,
