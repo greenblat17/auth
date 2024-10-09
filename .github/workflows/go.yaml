@@ -98,6 +98,9 @@ jobs:
     needs: image-build-and-push
 
     steps:
+      - name: Check if docker-compose.yml exists
+        run: ls -l ./docker-compose.yaml
+
       - name: Copy docker-compose.yml to server
         uses: appleboy/scp-action@v0.1.7
         with:
