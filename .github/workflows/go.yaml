@@ -98,8 +98,10 @@ jobs:
     needs: image-build-and-push
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          echo "$(ssh-keyscan -H ${{ secrets.SERVER_IP }})" >> ~/.ssh/known_hosts
 
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.5.3
