@@ -4,7 +4,7 @@ COPY . /github.com/greenblat17/auth/source/
 WORKDIR /github.com/greenblat17/auth/source/
 
 RUN go mod download
-RUN go build -o ./bin/auth_server cmd/user/main.go
+RUN go build -o ./bin/auth_server cmd/user/main.go --config-path=prod.env
 
 FROM alpine:latest
 

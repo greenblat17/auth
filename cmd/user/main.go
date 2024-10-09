@@ -2,10 +2,13 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"flag"
 	"log"
 	"net"
 	"time"
+
+	"github.com/greenblat17/auth/internal/config"
+	"github.com/greenblat17/auth/internal/config/env"
 
 	"github.com/greenblat17/auth/internal/model"
 	"github.com/greenblat17/auth/internal/repository"
@@ -19,10 +22,13 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-const (
-	grpcPort = 50051
-	dbDSN    = "host=localhost port=54321 dbname=auth user=auth-user password=auth-password sslmode=disable"
+var (
+	configPath string
 )
+
+func init() {
+	flag.StringVar(&configPath, "config-path", ".env", "path to config file")
+}
 
 type server struct {
 	desc.UnimplementedUserV1Server
@@ -113,19 +119,36 @@ func (s *server) Delete(ctx context.Context, req *desc.DeleteRequest) (*empty.Em
 }
 
 func main() {
+	flag.Parse()
 	ctx := context.Background()
 
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
+	err := config.Load(configPath)
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
+
+	grpcConfig, err := env.NewGRPCConfig()
+	if err != nil {
+		log.Fatalf("failed to get grpc config: %v", err)
+	}
+
+	pgConfig, err := env.NewPGConfig()
+	if err != nil {
+		log.Fatalf("failed to get pg config: %v", err)
+	}
+
+	lis, err := net.Listen("tcp", grpcConfig.Address())
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	conn, err := pgxpool.Connect(ctx, dbDSN)
+	pool, err := pgxpool.Connect(ctx, pgConfig.DSN())
 	if err != nil {
 		log.Fatalf("failed to connect: %v", err)
 	}
+	defer pool.Close()
 
-	db := user.NewRepository(conn)
+	db := user.NewRepository(pool)
 	server := NewServer(db)
 
 	s := grpc.NewServer()
