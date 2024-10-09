@@ -107,7 +107,9 @@ jobs:
           ssh-private-key: ${{ secrets.SSHKEY }}
 
       - name: Copy docker-compose file to server
-        run: scp -o StrictHostKeyChecking=no docker-compose.yaml ${{ secrets.SSH_USERNAME }}@${{ secrets.SERVER_HOST }}:.
+        run: |
+          scp -o StrictHostKeyChecking=no docker-compose.yaml ${{ secrets.SSH_USERNAME }}@${{ secrets.SERVER_HOST }}:.
+          scp -o StrictHostKeyChecking=no prod.env ${{ secrets.SSH_USERNAME }}@${{ secrets.SERVER_HOST }}:.
 
       - name: Run docker-compose on server
         run: ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USERNAME }}@${{ secrets.SERVER_HOST }} 'docker compose down && docker compose up -d'
