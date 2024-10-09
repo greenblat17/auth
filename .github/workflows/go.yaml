@@ -107,10 +107,6 @@ jobs:
           ssh-private-key: ${{ secrets.SSHKEY }}
 
       - name: Copy files to server
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSHKEY }}
         run: |
           scp ./docker-compose.yaml ${{ secrets.SSH_USERNAME }}@${{ secrets.SERVER_HOST }}:
 
@@ -120,10 +116,10 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSHKEY }}
-        run: |
-          docker compose down
-          docker compose rm
-          docker compose up -d
+          script: |
+            docker compose down
+            docker compose rm
+            docker compose up -d
 
   deploy-image:
     runs-on: ubuntu-latest
