@@ -98,30 +98,19 @@ jobs:
     needs: image-build-and-push
 
     steps:
-      - name: Add server to known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          echo "$(ssh-keyscan -H ${{ secrets.SERVER_IP }})" >> ~/.ssh/known_hosts
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-      - name: Set up SSH
+      - name: Setup SSH
         uses: webfactory/ssh-agent@v0.5.3
         with:
           ssh-private-key: ${{ secrets.SSHKEY }}
 
-      - name: Copy files to server
-        run: |
-          scp ./docker-compose.yaml ${{ secrets.SSH_USERNAME }}@${{ secrets.SERVER_HOST }}:
+      - name: Copy docker-compose file to server
+        run: scp -o StrictHostKeyChecking=no docker-compose.yaml ${{ secrets.SSH_USERNAME }}@${{ secrets.SERVER_HOST }}:.
 
-      - name: Run Docker Compose
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSHKEY }}
-          script: |
-            docker compose down
-            docker compose rm
-            docker compose up -d
+      - name: Run docker-compose on server
+        run: ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USERNAME }}@${{ secrets.SERVER_HOST }} 'docker-compose down && docker-compose up -d'
 
   deploy-image:
     runs-on: ubuntu-latest
