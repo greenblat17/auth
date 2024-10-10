@@ -2,6 +2,7 @@ version: '3'
 
 networks:
   app-network:
+    external: true
 
 volumes:
   postgres_volume_local:
