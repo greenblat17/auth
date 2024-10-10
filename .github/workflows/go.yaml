@@ -112,7 +112,7 @@ jobs:
           scp -o StrictHostKeyChecking=no prod.env ${{ secrets.SSH_USERNAME }}@${{ secrets.SERVER_HOST }}:.
           scp -o StrictHostKeyChecking=no migration_prod.Dockerfile ${{ secrets.SSH_USERNAME }}@${{ secrets.SERVER_HOST }}:.
           scp -o StrictHostKeyChecking=no migration_prod.sh ${{ secrets.SSH_USERNAME }}@${{ secrets.SERVER_HOST }}:.
-          scp -o StrictHostKeyChecking=no migrations/*.sql ${{ secrets.SSH_USERNAME }}@${{ secrets.SERVER_HOST }}:migrations/
+          scp -o StrictHostKeyChecking=no -r migrations/ ${{ secrets.SSH_USERNAME }}@${{ secrets.SERVER_HOST }}:migrations/
 
       - name: Run docker-compose on server
         run: ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USERNAME }}@${{ secrets.SERVER_HOST }} 'docker compose down && docker compose up -d'
