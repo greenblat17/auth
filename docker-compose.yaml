@@ -2,7 +2,6 @@ version: '3'
 
 networks:
   app-network:
-    external: true
 
 volumes:
   postgres_volume_local:
@@ -27,5 +26,11 @@ services:
     restart: on-failure
     environment:
       DB_HOST: pg-prod
-    networks:
-      - app-network
+  auth-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "50051:50051"
+    environment:
+      DB_HOST: pg-prod
