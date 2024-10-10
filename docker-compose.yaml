@@ -32,5 +32,5 @@ services:
       dockerfile: Dockerfile
     ports:
       - "50051:50051"
-    environment:
-      DB_HOST: pg-prod
+    env_file:
+      - prod.env
