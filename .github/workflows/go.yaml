@@ -143,4 +143,4 @@ jobs:
             docker rm $CONTAINER_NAME
             
             # Run a new container from a new image
-            docker run -d -p 50051:50051 --name $CONTAINER_NAME --network app-network -t $REGISTRY/$IMAGE_NAME:$TAG_NAME
+            docker run -d -p 50051:50051 --name $CONTAINER_NAME --network root-app_network -t $REGISTRY/$IMAGE_NAME:$TAG_NAME
