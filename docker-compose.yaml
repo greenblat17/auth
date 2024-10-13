@@ -1,36 +1,24 @@
 version: '3'
 
-networks:
-  app-network:
-
 volumes:
-  postgres_volume_local:
-  postgres_volume_prod:
+  postgres_volume:
 
 services:
-  pg-prod:
+  pg:
     image: postgres:14-alpine3.17
-    container_name: pg-prod
-    env_file:
-      - prod.env
+    environment:
+      - "POSTGRES_DB=${PG_DATABASE_NAME}"
+      - "POSTGRES_USER=${PG_USER}"
+      - "POSTGRES_PASSWORD=${PG_PASSWORD}"
     ports:
-      - "54322:5432"
+      - "${PG_PORT}:5432"
     volumes:
-      - postgres_volume_prod:/var/lib/postgresql/data
-    networks:
-      - app-network
-  migrator-prod:
+      - postgres_volume:/var/lib/postgresql/data
+
+  migrator:
     build:
       context: .
-      dockerfile: migration_prod.Dockerfile
+      dockerfile: migration.Dockerfile
     restart: on-failure
     environment:
-      DB_HOST: pg-prod
-  auth-server:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "50051:50051"
-    env_file:
-      - prod.env
+      DB_HOST: pg
