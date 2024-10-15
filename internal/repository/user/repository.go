@@ -20,7 +20,7 @@ const (
 	emailColumn     = "email"
 	roleColumn      = "role"
 	passwordColumn  = "password"
-	_               = "created_at"
+	createdAtColumn = "created_at"
 	updatedAtColumn = "updated_at"
 )
 
@@ -82,7 +82,7 @@ func (r *repo) Update(ctx context.Context, user *model.User) error {
 }
 
 func (r *repo) Get(ctx context.Context, id int64) (*model.User, error) {
-	sqb := sq.Select(idColumn, nameColumn, emailColumn, passwordColumn, roleColumn).
+	sqb := sq.Select(idColumn, nameColumn, emailColumn, passwordColumn, roleColumn, createdAtColumn, updatedAtColumn).
 		From(userTable).
 		Where(sq.Eq{idColumn: id}).
 		PlaceholderFormat(sq.Dollar)
