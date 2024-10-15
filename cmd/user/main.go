@@ -51,7 +51,7 @@ func (s *server) Create(ctx context.Context, req *desc.CreateRequest) (*desc.Cre
 		Password:  req.GetPassword(),
 		Role:      req.GetRole().String(),
 		CreatedAt: now,
-		UpdatedAt: now,
+		UpdatedAt: &now,
 	}
 
 	id, err := s.userRepository.Create(ctx, createdUser)
@@ -87,7 +87,7 @@ func (s *server) Get(ctx context.Context, req *desc.GetRequest) (*desc.GetRespon
 		Email:     getUser.Email,
 		Role:      role,
 		CreatedAt: timestamppb.New(getUser.CreatedAt),
-		UpdatedAt: timestamppb.New(getUser.UpdatedAt),
+		UpdatedAt: timestamppb.New(getUser.GetUpdateAt()),
 	}, nil
 }
 
