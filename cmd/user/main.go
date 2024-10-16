@@ -2,9 +2,18 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"flag"
 	"log"
 	"net"
+	"time"
+
+	"github.com/greenblat17/auth/internal/config"
+	"github.com/greenblat17/auth/internal/config/env"
+
+	"github.com/greenblat17/auth/internal/model"
+	"github.com/greenblat17/auth/internal/repository"
+	"github.com/greenblat17/auth/internal/repository/user"
+	"github.com/jackc/pgx/v4/pgxpool"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	desc "github.com/greenblat17/auth/pkg/user_v1"
@@ -13,47 +22,143 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-const (
-	grpcPort = 50051
+var (
+	configPath string
 )
+
+func init() {
+	flag.StringVar(&configPath, "config-path", ".env", "path to config file")
+}
 
 type server struct {
 	desc.UnimplementedUserV1Server
+	userRepository repository.UserRepository
 }
 
-func (s *server) Create(_ context.Context, _ *desc.CreateRequest) (*desc.CreateResponse, error) {
+// NewServer creates a new server
+func NewServer(userRepository repository.UserRepository) *server {
+	return &server{
+		userRepository: userRepository,
+	}
+}
+
+// Create creates a new user
+func (s *server) Create(ctx context.Context, req *desc.CreateRequest) (*desc.CreateResponse, error) {
+	now := time.Now()
+	createdUser := &model.User{
+		Name:      req.GetName(),
+		Email:     req.GetEmail(),
+		Password:  req.GetPassword(),
+		Role:      req.GetRole().String(),
+		CreatedAt: now,
+		UpdatedAt: &now,
+	}
+
+	id, err := s.userRepository.Create(ctx, createdUser)
+	if err != nil {
+		return nil, err
+	}
+
 	return &desc.CreateResponse{
-		Id: 1,
+		Id: id,
 	}, nil
 }
-func (s *server) Get(_ context.Context, req *desc.GetRequest) (*desc.GetResponse, error) {
-	now := timestamppb.Now()
+
+// Get gets a user
+func (s *server) Get(ctx context.Context, req *desc.GetRequest) (*desc.GetResponse, error) {
+	getUser, err := s.userRepository.Get(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+
+	var role desc.Role
+	switch getUser.Role {
+	case model.RoleAdmin:
+		role = desc.Role_ADMIN
+	case model.RoleUser:
+		role = desc.Role_USER
+	default:
+		role = desc.Role_UNKNOWN
+	}
+
+	var updatedAt *timestamppb.Timestamp
+	if getUser.UpdatedAt != nil {
+		updatedAt = timestamppb.New(*getUser.UpdatedAt)
+	}
 
 	return &desc.GetResponse{
 		Id:        req.GetId(),
-		Name:      "name",
-		Email:     "email",
-		Role:      desc.Role_USER,
-		CreatedAt: now,
-		UpdatedAt: now,
+		Name:      getUser.Name,
+		Email:     getUser.Email,
+		Role:      role,
+		CreatedAt: timestamppb.New(getUser.CreatedAt),
+		UpdatedAt: updatedAt,
 	}, nil
 }
-func (s *server) Update(_ context.Context, _ *desc.UpdateRequest) (*empty.Empty, error) {
+
+// Update updates a user
+func (s *server) Update(ctx context.Context, req *desc.UpdateRequest) (*empty.Empty, error) {
+	updateUser := &model.User{
+		ID:    req.GetId(),
+		Name:  req.GetName().GetValue(),
+		Email: req.GetEmail().GetValue(),
+		Role:  req.GetRole().String(),
+	}
+
+	err := s.userRepository.Update(ctx, updateUser)
+	if err != nil {
+		return nil, err
+	}
+
 	return &empty.Empty{}, nil
 }
-func (s *server) Delete(_ context.Context, _ *desc.DeleteRequest) (*empty.Empty, error) {
+
+// Delete deletes a user
+func (s *server) Delete(ctx context.Context, req *desc.DeleteRequest) (*empty.Empty, error) {
+	err := s.userRepository.Delete(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+
 	return &empty.Empty{}, nil
 }
 
 func main() {
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
+	flag.Parse()
+	ctx := context.Background()
+
+	err := config.Load(configPath)
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
+
+	grpcConfig, err := env.NewGRPCConfig()
+	if err != nil {
+		log.Fatalf("failed to get grpc config: %v", err)
+	}
+
+	pgConfig, err := env.NewPGConfig()
+	if err != nil {
+		log.Fatalf("failed to get pg config: %v", err)
+	}
+
+	lis, err := net.Listen("tcp", grpcConfig.Address())
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
+	pool, err := pgxpool.Connect(ctx, pgConfig.DSN())
+	if err != nil {
+		log.Fatalf("failed to connect: %v", err)
+	}
+	defer pool.Close()
+
+	db := user.NewRepository(pool)
+	server := NewServer(db)
+
 	s := grpc.NewServer()
 	reflection.Register(s)
-	desc.RegisterUserV1Server(s, &server{})
+	desc.RegisterUserV1Server(s, server)
 
 	log.Printf("server listening at %v", lis.Addr())
 
