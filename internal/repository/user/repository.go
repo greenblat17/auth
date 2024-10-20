@@ -40,10 +40,10 @@ func NewRepository(db *pgxpool.Pool) repository.UserRepository {
 	return &repo{db: db}
 }
 
-func (r *repo) Create(ctx context.Context, user *model.User) (int64, error) {
+func (r *repo) Create(ctx context.Context, info *model.UserInfo) (int64, error) {
 	sqb := sq.Insert(userTable).
 		Columns(nameColumn, emailColumn, passwordColumn, roleColumn).
-		Values(user.Info.Name, user.Info.Email, user.Info.Password, user.Info.Role).
+		Values(info.Name, info.Email, info.Password, info.Role).
 		Suffix("RETURNING id").
 		PlaceholderFormat(sq.Dollar)
 
