@@ -6,12 +6,12 @@ import (
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/greenblat17/auth/internal/client/db"
 	"github.com/greenblat17/auth/internal/model"
 	"github.com/greenblat17/auth/internal/repository"
 	"github.com/greenblat17/auth/internal/repository/user/converter"
 	modelRepo "github.com/greenblat17/auth/internal/repository/user/model"
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 const (
@@ -32,11 +32,11 @@ var (
 )
 
 type repo struct {
-	db *pgxpool.Pool
+	db db.Client
 }
 
 // NewRepository creates a new user repository.
-func NewRepository(db *pgxpool.Pool) repository.UserRepository {
+func NewRepository(db db.Client) repository.UserRepository {
 	return &repo{db: db}
 }
 
@@ -52,8 +52,13 @@ func (r *repo) Create(ctx context.Context, info *model.UserInfo) (int64, error) 
 		return 0, err
 	}
 
+	q := db.Query{
+		Name:     "UserRepository.Create",
+		QueryRaw: query,
+	}
+
 	var userID int64
-	err = r.db.QueryRow(ctx, query, args...).Scan(&userID)
+	err = r.db.DB().ScanOneContext(ctx, &userID, q, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -75,7 +80,12 @@ func (r *repo) Update(ctx context.Context, user *model.User) error {
 		return err
 	}
 
-	_, err = r.db.Exec(ctx, query, args...)
+	q := db.Query{
+		Name:     "UserRepository.Update",
+		QueryRaw: query,
+	}
+
+	_, err = r.db.DB().ExecContext(ctx, q, args...)
 	if err != nil {
 		return err
 	}
@@ -94,9 +104,13 @@ func (r *repo) Get(ctx context.Context, id int64) (*model.User, error) {
 		return nil, err
 	}
 
+	q := db.Query{
+		Name:     "UserRepository.Get",
+		QueryRaw: query,
+	}
+
 	var user modelRepo.User
-	err = r.db.QueryRow(ctx, query, args...).
-		Scan(&user.ID, &user.Info.Name, &user.Info.Email, &user.Info.Password, &user.Info.Role, &user.CreatedAt, &user.UpdatedAt)
+	err = r.db.DB().ScanOneContext(ctx, &user, q, args...)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, ErrNotFound
@@ -117,7 +131,12 @@ func (r *repo) Delete(ctx context.Context, id int64) error {
 		return err
 	}
 
-	cmdTag, err := r.db.Exec(ctx, query, args...)
+	q := db.Query{
+		Name:     "UserRepository.Delete",
+		QueryRaw: query,
+	}
+
+	cmdTag, err := r.db.DB().ExecContext(ctx, q, args...)
 	if err != nil {
 		return err
 	}
