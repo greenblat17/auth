@@ -9,17 +9,20 @@ import (
 var _ def.UserService = (*service)(nil)
 
 type service struct {
-	userRepository repository.UserRepository
-	txManager      db.TxManager
+	auditRepository repository.AuditRepository
+	userRepository  repository.UserRepository
+	txManager       db.TxManager
 }
 
 // NewService returns a new service
 func NewService(
+	auditRepository repository.AuditRepository,
 	userRepository repository.UserRepository,
 	txManager db.TxManager,
 ) *service {
 	return &service{
-		userRepository: userRepository,
-		txManager:      txManager,
+		auditRepository: auditRepository,
+		userRepository:  userRepository,
+		txManager:       txManager,
 	}
 }

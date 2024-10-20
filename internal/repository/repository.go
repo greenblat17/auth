@@ -13,3 +13,8 @@ type UserRepository interface {
 	Get(ctx context.Context, id int64) (*model.User, error)
 	Delete(ctx context.Context, id int64) error
 }
+
+// AuditRepository is a repository for Audit
+type AuditRepository interface {
+	Save(ctx context.Context, audit *model.Audit) error
+}

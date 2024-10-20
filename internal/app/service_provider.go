@@ -12,6 +12,7 @@ import (
 	"github.com/greenblat17/auth/internal/config"
 	"github.com/greenblat17/auth/internal/config/env"
 	"github.com/greenblat17/auth/internal/repository"
+	"github.com/greenblat17/auth/internal/repository/audit"
 	userRepository "github.com/greenblat17/auth/internal/repository/user"
 	"github.com/greenblat17/auth/internal/service"
 	userService "github.com/greenblat17/auth/internal/service/user"
@@ -21,9 +22,10 @@ type serviceProvider struct {
 	pgConfig   config.PGConfig
 	grpcConfig config.GRPCConfig
 
-	dbClient       db.Client
-	txManager      db.TxManager
-	userRepository repository.UserRepository
+	dbClient        db.Client
+	txManager       db.TxManager
+	userRepository  repository.UserRepository
+	auditRepository repository.AuditRepository
 
 	userService service.UserService
 
@@ -87,6 +89,14 @@ func (s *serviceProvider) TxManager(ctx context.Context) db.TxManager {
 	return s.txManager
 }
 
+func (s *serviceProvider) AuditRepository(ctx context.Context) repository.AuditRepository {
+	if s.auditRepository == nil {
+		s.auditRepository = audit.NewRepository(s.DBClient(ctx))
+	}
+
+	return s.auditRepository
+}
+
 func (s *serviceProvider) UserRepository(ctx context.Context) repository.UserRepository {
 	if s.userRepository == nil {
 		s.userRepository = userRepository.NewRepository(s.DBClient(ctx))
@@ -98,6 +108,7 @@ func (s *serviceProvider) UserRepository(ctx context.Context) repository.UserRep
 func (s *serviceProvider) UserService(ctx context.Context) service.UserService {
 	if s.userService == nil {
 		s.userService = userService.NewService(
+			s.AuditRepository(ctx),
 			s.UserRepository(ctx),
 			s.TxManager(ctx),
 		)
