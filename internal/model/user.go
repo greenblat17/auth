@@ -17,6 +17,7 @@ type User struct {
 	UpdatedAt *time.Time
 }
 
+// UserInfo model
 type UserInfo struct {
 	Name     string
 	Email    string

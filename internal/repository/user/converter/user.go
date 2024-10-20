@@ -7,6 +7,7 @@ import (
 	modelRepo "github.com/greenblat17/auth/internal/repository/user/model"
 )
 
+// ToUserFromRepo converts repo user to model user
 func ToUserFromRepo(user *modelRepo.User) *model.User {
 	var updatedAt *time.Time
 	if user.UpdatedAt.Valid {
@@ -21,6 +22,7 @@ func ToUserFromRepo(user *modelRepo.User) *model.User {
 	}
 }
 
+// ToUserInfoFromRepo converts repo user info to model user
 func ToUserInfoFromRepo(info modelRepo.Info) model.UserInfo {
 	return model.UserInfo{
 		Name:     info.Name,
