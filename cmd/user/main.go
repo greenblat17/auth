@@ -46,10 +46,12 @@ func NewServer(userRepository repository.UserRepository) *server {
 func (s *server) Create(ctx context.Context, req *desc.CreateRequest) (*desc.CreateResponse, error) {
 	now := time.Now()
 	createdUser := &model.User{
-		Name:      req.GetName(),
-		Email:     req.GetEmail(),
-		Password:  req.GetPassword(),
-		Role:      req.GetRole().String(),
+		Info: model.UserInfo{
+			Name:     req.GetName(),
+			Email:    req.GetEmail(),
+			Password: req.GetPassword(),
+			Role:     req.GetRole().String(),
+		},
 		CreatedAt: now,
 		UpdatedAt: &now,
 	}
@@ -72,7 +74,7 @@ func (s *server) Get(ctx context.Context, req *desc.GetRequest) (*desc.GetRespon
 	}
 
 	var role desc.Role
-	switch getUser.Role {
+	switch getUser.Info.Role {
 	case model.RoleAdmin:
 		role = desc.Role_ADMIN
 	case model.RoleUser:
@@ -88,8 +90,8 @@ func (s *server) Get(ctx context.Context, req *desc.GetRequest) (*desc.GetRespon
 
 	return &desc.GetResponse{
 		Id:        req.GetId(),
-		Name:      getUser.Name,
-		Email:     getUser.Email,
+		Name:      getUser.Info.Name,
+		Email:     getUser.Info.Email,
 		Role:      role,
 		CreatedAt: timestamppb.New(getUser.CreatedAt),
 		UpdatedAt: updatedAt,
@@ -99,10 +101,12 @@ func (s *server) Get(ctx context.Context, req *desc.GetRequest) (*desc.GetRespon
 // Update updates a user
 func (s *server) Update(ctx context.Context, req *desc.UpdateRequest) (*empty.Empty, error) {
 	updateUser := &model.User{
-		ID:    req.GetId(),
-		Name:  req.GetName().GetValue(),
-		Email: req.GetEmail().GetValue(),
-		Role:  req.GetRole().String(),
+		ID: req.GetId(),
+		Info: model.UserInfo{
+			Name:  req.GetName().GetValue(),
+			Email: req.GetEmail().GetValue(),
+			Role:  req.GetRole().String(),
+		},
 	}
 
 	err := s.userRepository.Update(ctx, updateUser)

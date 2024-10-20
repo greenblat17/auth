@@ -12,19 +12,14 @@ const (
 // User model
 type User struct {
 	ID        int64
-	Name      string
-	Email     string
-	Password  string
-	Role      string
+	Info      UserInfo
 	CreatedAt time.Time
 	UpdatedAt *time.Time
 }
 
-// GetUpdateAt get update time value
-func (u *User) GetUpdateAt() time.Time {
-	if u.UpdatedAt != nil {
-		return *u.UpdatedAt
-	}
-
-	return time.Time{}
+type UserInfo struct {
+	Name     string
+	Email    string
+	Password string
+	Role     string
 }

@@ -8,6 +8,8 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/greenblat17/auth/internal/model"
 	"github.com/greenblat17/auth/internal/repository"
+	"github.com/greenblat17/auth/internal/repository/user/converter"
+	modelRepo "github.com/greenblat17/auth/internal/repository/user/model"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -41,7 +43,7 @@ func NewRepository(db *pgxpool.Pool) repository.UserRepository {
 func (r *repo) Create(ctx context.Context, user *model.User) (int64, error) {
 	sqb := sq.Insert(userTable).
 		Columns(nameColumn, emailColumn, passwordColumn, roleColumn).
-		Values(user.Name, user.Email, user.Password, user.Role).
+		Values(user.Info.Name, user.Info.Email, user.Info.Password, user.Info.Role).
 		Suffix("RETURNING id").
 		PlaceholderFormat(sq.Dollar)
 
@@ -61,11 +63,11 @@ func (r *repo) Create(ctx context.Context, user *model.User) (int64, error) {
 
 func (r *repo) Update(ctx context.Context, user *model.User) error {
 	sqb := sq.Update(userTable).
-		Set(nameColumn, user.Name).
-		Set(emailColumn, user.Email).
-		Set(roleColumn, user.Role).
+		Set(nameColumn, user.Info.Name).
+		Set(emailColumn, user.Info.Email).
+		Set(roleColumn, user.Info.Role).
 		Set(updatedAtColumn, time.Now()).
-		Where(sq.Eq{"id": user.ID}).
+		Where(sq.Eq{idColumn: user.ID}).
 		PlaceholderFormat(sq.Dollar)
 
 	query, args, err := sqb.ToSql()
@@ -92,9 +94,9 @@ func (r *repo) Get(ctx context.Context, id int64) (*model.User, error) {
 		return nil, err
 	}
 
-	var user model.User
+	var user modelRepo.User
 	err = r.db.QueryRow(ctx, query, args...).
-		Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Role)
+		Scan(&user.ID, &user.Info.Name, &user.Info.Email, &user.Info.Password, &user.Info.Role, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, ErrNotFound
@@ -102,7 +104,7 @@ func (r *repo) Get(ctx context.Context, id int64) (*model.User, error) {
 		return nil, err
 	}
 
-	return &user, nil
+	return converter.ToUserFromRepo(&user), nil
 }
 
 func (r *repo) Delete(ctx context.Context, id int64) error {
