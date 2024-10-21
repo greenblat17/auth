@@ -25,14 +25,17 @@ type UserInfo struct {
 	Role     string
 }
 
+// IsEmptyName check if username is empty
 func (u *UserInfo) IsEmptyName() bool {
 	return u.Name == ""
 }
 
+// IsEmptyEmail check if user email is empty
 func (u *UserInfo) IsEmptyEmail() bool {
 	return u.Email == ""
 }
 
+// IsEmptyRole check if user role is empty
 func (u *UserInfo) IsEmptyRole() bool {
 	return u.Role == ""
 }
