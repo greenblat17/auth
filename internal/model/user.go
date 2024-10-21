@@ -24,3 +24,15 @@ type UserInfo struct {
 	Password string
 	Role     string
 }
+
+func (u *UserInfo) IsEmptyName() bool {
+	return u.Name == ""
+}
+
+func (u *UserInfo) IsEmptyEmail() bool {
+	return u.Email == ""
+}
+
+func (u *UserInfo) IsEmptyRole() bool {
+	return u.Role == ""
+}

@@ -4,6 +4,7 @@ package user_v1;
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
 
 option go_package = "github.com/greenblat17/auth/pkg/user_v1;user_v1";
 
@@ -29,7 +30,11 @@ message UserInfo {
 }
 
 message CreateRequest {
-  UserInfo info = 1;
+  string name = 1;
+  string email = 2;
+  string password = 3;
+  string password_confirm = 4;
+  Role role = 5;
 }
 
 message CreateResponse {
@@ -47,11 +52,19 @@ message GetRequest {
 }
 
 message GetResponse {
-  User user = 1;
+  int64 id = 1;
+  string name = 2;
+  string email = 3;
+  Role role = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
 }
 
 message UpdateRequest {
-  User user = 1;
+  int64 id = 1;
+  google.protobuf.StringValue name = 2;
+  google.protobuf.StringValue email = 3;
+  Role role = 4;
 }
 
 message DeleteRequest {

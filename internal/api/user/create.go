@@ -9,8 +9,7 @@ import (
 
 // Create creates a new user
 func (i *Implementation) Create(ctx context.Context, req *desc.CreateRequest) (*desc.CreateResponse, error) {
-	userObj := converter.ToUserInfoFromAPI(req.Info)
-	id, err := i.userService.Create(ctx, &userObj)
+	id, err := i.userService.Create(ctx, converter.ToUserInfoFromCreateAPI(req))
 	if err != nil {
 		return nil, err
 	}
