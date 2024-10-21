@@ -8,8 +8,13 @@ import (
 
 // UserRepository is a repository for User
 type UserRepository interface {
-	Create(ctx context.Context, user *model.User) (int64, error)
+	Create(ctx context.Context, user *model.UserInfo) (int64, error)
 	Update(ctx context.Context, user *model.User) error
 	Get(ctx context.Context, id int64) (*model.User, error)
 	Delete(ctx context.Context, id int64) error
+}
+
+// AuditRepository is a repository for Audit
+type AuditRepository interface {
+	Save(ctx context.Context, audit *model.Audit) error
 }

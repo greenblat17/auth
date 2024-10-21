@@ -12,19 +12,30 @@ const (
 // User model
 type User struct {
 	ID        int64
-	Name      string
-	Email     string
-	Password  string
-	Role      string
+	Info      UserInfo
 	CreatedAt time.Time
 	UpdatedAt *time.Time
 }
 
-// GetUpdateAt get update time value
-func (u *User) GetUpdateAt() time.Time {
-	if u.UpdatedAt != nil {
-		return *u.UpdatedAt
-	}
+// UserInfo model
+type UserInfo struct {
+	Name     string
+	Email    string
+	Password string
+	Role     string
+}
 
-	return time.Time{}
+// IsEmptyName check if username is empty
+func (u *UserInfo) IsEmptyName() bool {
+	return u.Name == ""
+}
+
+// IsEmptyEmail check if user email is empty
+func (u *UserInfo) IsEmptyEmail() bool {
+	return u.Email == ""
+}
+
+// IsEmptyRole check if user role is empty
+func (u *UserInfo) IsEmptyRole() bool {
+	return u.Role == ""
 }
