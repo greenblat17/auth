@@ -12,11 +12,11 @@ func main() {
 
 	a, err := app.NewApp(ctx)
 	if err != nil {
-		log.Fatalf("Failed to create app")
+		log.Fatalf("failed to create app: %v", err)
 	}
 
 	err = a.Run()
 	if err != nil {
-		log.Fatalf("Failed to run")
+		log.Fatalf("failed to run app: %v", err)
 	}
 }
