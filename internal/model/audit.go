@@ -5,7 +5,7 @@ import "time"
 // EntityType represents entities that can be existing in database
 type EntityType string
 
-var (
+const (
 	// UserEntityType represents user entity type
 	UserEntityType EntityType = "user"
 )
