@@ -67,7 +67,10 @@ func (r *repo) Create(ctx context.Context, info *model.UserInfo) (int64, error) 
 }
 
 func (r *repo) Update(ctx context.Context, user *model.User) error {
-	sqb := sq.Update(userTable)
+	sqb := sq.Update(userTable).
+		Set(updatedAtColumn, time.Now()).
+		Where(sq.Eq{idColumn: user.ID}).
+		PlaceholderFormat(sq.Dollar)
 
 	if !user.Info.IsEmptyName() {
 		sqb = sqb.Set(nameColumn, user.Info.Name)
@@ -78,10 +81,6 @@ func (r *repo) Update(ctx context.Context, user *model.User) error {
 	if !user.Info.IsEmptyRole() {
 		sqb = sqb.Set(roleColumn, user.Info.Role)
 	}
-
-	sqb = sqb.Set(updatedAtColumn, time.Now()).
-		Where(sq.Eq{idColumn: user.ID}).
-		PlaceholderFormat(sq.Dollar)
 
 	query, args, err := sqb.ToSql()
 	if err != nil {
