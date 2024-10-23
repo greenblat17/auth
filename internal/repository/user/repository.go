@@ -6,10 +6,12 @@ import (
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/greenblat17/auth/internal/client/db"
 	"github.com/greenblat17/auth/internal/model"
 	"github.com/greenblat17/auth/internal/repository"
+	"github.com/greenblat17/auth/internal/repository/user/converter"
+	modelRepo "github.com/greenblat17/auth/internal/repository/user/model"
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 const (
@@ -30,18 +32,18 @@ var (
 )
 
 type repo struct {
-	db *pgxpool.Pool
+	db db.Client
 }
 
 // NewRepository creates a new user repository.
-func NewRepository(db *pgxpool.Pool) repository.UserRepository {
+func NewRepository(db db.Client) repository.UserRepository {
 	return &repo{db: db}
 }
 
-func (r *repo) Create(ctx context.Context, user *model.User) (int64, error) {
+func (r *repo) Create(ctx context.Context, info *model.UserInfo) (int64, error) {
 	sqb := sq.Insert(userTable).
 		Columns(nameColumn, emailColumn, passwordColumn, roleColumn).
-		Values(user.Name, user.Email, user.Password, user.Role).
+		Values(info.Name, info.Email, info.Password, info.Role).
 		Suffix("RETURNING id").
 		PlaceholderFormat(sq.Dollar)
 
@@ -50,8 +52,13 @@ func (r *repo) Create(ctx context.Context, user *model.User) (int64, error) {
 		return 0, err
 	}
 
+	q := db.Query{
+		Name:     "UserRepository.Create",
+		QueryRaw: query,
+	}
+
 	var userID int64
-	err = r.db.QueryRow(ctx, query, args...).Scan(&userID)
+	err = r.db.DB().ScanOneContext(ctx, &userID, q, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -61,19 +68,31 @@ func (r *repo) Create(ctx context.Context, user *model.User) (int64, error) {
 
 func (r *repo) Update(ctx context.Context, user *model.User) error {
 	sqb := sq.Update(userTable).
-		Set(nameColumn, user.Name).
-		Set(emailColumn, user.Email).
-		Set(roleColumn, user.Role).
 		Set(updatedAtColumn, time.Now()).
-		Where(sq.Eq{"id": user.ID}).
+		Where(sq.Eq{idColumn: user.ID}).
 		PlaceholderFormat(sq.Dollar)
+
+	if !user.Info.IsEmptyName() {
+		sqb = sqb.Set(nameColumn, user.Info.Name)
+	}
+	if !user.Info.IsEmptyEmail() {
+		sqb = sqb.Set(emailColumn, user.Info.Email)
+	}
+	if !user.Info.IsEmptyRole() {
+		sqb = sqb.Set(roleColumn, user.Info.Role)
+	}
 
 	query, args, err := sqb.ToSql()
 	if err != nil {
 		return err
 	}
 
-	_, err = r.db.Exec(ctx, query, args...)
+	q := db.Query{
+		Name:     "UserRepository.Update",
+		QueryRaw: query,
+	}
+
+	_, err = r.db.DB().ExecContext(ctx, q, args...)
 	if err != nil {
 		return err
 	}
@@ -92,9 +111,13 @@ func (r *repo) Get(ctx context.Context, id int64) (*model.User, error) {
 		return nil, err
 	}
 
-	var user model.User
-	err = r.db.QueryRow(ctx, query, args...).
-		Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Role)
+	q := db.Query{
+		Name:     "UserRepository.Get",
+		QueryRaw: query,
+	}
+
+	var user modelRepo.User
+	err = r.db.DB().ScanOneContext(ctx, &user, q, args...)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, ErrNotFound
@@ -102,7 +125,7 @@ func (r *repo) Get(ctx context.Context, id int64) (*model.User, error) {
 		return nil, err
 	}
 
-	return &user, nil
+	return converter.ToUserFromRepo(&user), nil
 }
 
 func (r *repo) Delete(ctx context.Context, id int64) error {
@@ -115,7 +138,12 @@ func (r *repo) Delete(ctx context.Context, id int64) error {
 		return err
 	}
 
-	cmdTag, err := r.db.Exec(ctx, query, args...)
+	q := db.Query{
+		Name:     "UserRepository.Delete",
+		QueryRaw: query,
+	}
+
+	cmdTag, err := r.db.DB().ExecContext(ctx, q, args...)
 	if err != nil {
 		return err
 	}
