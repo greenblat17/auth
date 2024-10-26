@@ -5,10 +5,6 @@ import (
 	"log"
 
 	"github.com/greenblat17/auth/internal/api/user"
-	"github.com/greenblat17/auth/internal/client/db"
-	"github.com/greenblat17/auth/internal/client/db/pg"
-	"github.com/greenblat17/auth/internal/client/db/transaction"
-	"github.com/greenblat17/auth/internal/closer"
 	"github.com/greenblat17/auth/internal/config"
 	"github.com/greenblat17/auth/internal/config/env"
 	"github.com/greenblat17/auth/internal/repository"
@@ -16,6 +12,10 @@ import (
 	userRepository "github.com/greenblat17/auth/internal/repository/user"
 	"github.com/greenblat17/auth/internal/service"
 	userService "github.com/greenblat17/auth/internal/service/user"
+	"github.com/greenblat17/platform-common/pkg/closer"
+	"github.com/greenblat17/platform-common/pkg/db"
+	"github.com/greenblat17/platform-common/pkg/db/pg"
+	"github.com/greenblat17/platform-common/pkg/db/transaction"
 )
 
 type serviceProvider struct {

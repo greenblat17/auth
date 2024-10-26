@@ -6,11 +6,11 @@ import (
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/greenblat17/auth/internal/client/db"
 	"github.com/greenblat17/auth/internal/model"
 	"github.com/greenblat17/auth/internal/repository"
 	"github.com/greenblat17/auth/internal/repository/user/converter"
 	modelRepo "github.com/greenblat17/auth/internal/repository/user/model"
+	"github.com/greenblat17/platform-common/pkg/db"
 	"github.com/jackc/pgx/v4"
 )
 

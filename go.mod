@@ -1,6 +1,8 @@
 module github.com/greenblat17/auth
 
-go 1.21
+go 1.22
+
+toolchain go1.22.3
 
 require (
 	github.com/golang/protobuf v1.5.4
@@ -13,6 +15,7 @@ require github.com/pkg/errors v0.9.1 // indirect
 require (
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/georgysavva/scany v1.2.2
+	github.com/greenblat17/platform-common v0.0.0-20241026072858-bb6f60c0d74b
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.14.3 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
