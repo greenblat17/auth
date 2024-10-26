@@ -18,7 +18,7 @@ func (s *service) Get(ctx context.Context, id int64) (*model.User, error) {
 			return errTx
 		}
 
-		errTx = s.auditRepository.Save(ctx, converter.ToAuditFromEntity(model.UserEntityType, "delete"))
+		errTx = s.auditRepository.Save(ctx, converter.ToAuditFromEntity(model.UserEntityType, "get"))
 		if errTx != nil {
 			return errTx
 		}
