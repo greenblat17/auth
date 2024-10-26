@@ -57,7 +57,7 @@ func ToUserFromUpdateAPI(req *desc.UpdateRequest) *model.User {
 		Info: model.UserInfo{
 			Name:  req.GetName().GetValue(),
 			Email: req.GetEmail().GetValue(),
-			Role:  req.GetEmail().GetValue(),
+			Role:  req.GetRole().String(),
 		},
 	}
 }
