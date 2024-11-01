@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/gojuno/minimock/v3"
 	"github.com/greenblat17/auth/internal/model"
@@ -24,9 +25,11 @@ func TestDelete(t *testing.T) {
 	}
 
 	type deps struct {
-		userRepository  repository.UserRepository
-		auditRepository repository.AuditRepository
-		txManager       db.TxManager
+		userCacheRepository repository.UserCacheRepository
+		userRepository      repository.UserRepository
+		auditRepository     repository.AuditRepository
+		txManager           db.TxManager
+		ttl                 time.Duration
 	}
 
 	var (
@@ -39,6 +42,8 @@ func TestDelete(t *testing.T) {
 			Entity: model.UserEntityType,
 			Action: "delete",
 		}
+
+		ttl = time.Second
 	)
 
 	tests := []struct {
@@ -60,15 +65,20 @@ func TestDelete(t *testing.T) {
 				auditRepoMock := mocks.NewAuditRepositoryMock(mc)
 				auditRepoMock.SaveMock.Expect(ctx, audit).Return(nil)
 
+				userCacheRepoMock := mocks.NewUserCacheRepositoryMock(mc)
+				userCacheRepoMock.DeleteMock.Expect(ctx, id).Return(nil)
+
 				txManagerMock := dbMocks.NewTxManagerMock(mc)
 				txManagerMock.ReadCommitedMock.Set(func(ctx context.Context, f db.Handler) (err error) {
 					return f(ctx)
 				})
 
 				return deps{
-					userRepository:  userRepoMock,
-					auditRepository: auditRepoMock,
-					txManager:       txManagerMock,
+					userCacheRepository: userCacheRepoMock,
+					userRepository:      userRepoMock,
+					auditRepository:     auditRepoMock,
+					txManager:           txManagerMock,
+					ttl:                 ttl,
 				}
 			},
 			err: nil,
@@ -85,21 +95,25 @@ func TestDelete(t *testing.T) {
 
 				auditRepoMock := mocks.NewAuditRepositoryMock(mc)
 
+				userCacheRepoMock := mocks.NewUserCacheRepositoryMock(mc)
+
 				txManagerMock := dbMocks.NewTxManagerMock(mc)
 				txManagerMock.ReadCommitedMock.Set(func(ctx context.Context, f db.Handler) (err error) {
 					return f(ctx)
 				})
 
 				return deps{
-					userRepository:  userRepoMock,
-					auditRepository: auditRepoMock,
-					txManager:       txManagerMock,
+					userCacheRepository: userCacheRepoMock,
+					userRepository:      userRepoMock,
+					auditRepository:     auditRepoMock,
+					txManager:           txManagerMock,
+					ttl:                 ttl,
 				}
 			},
 			err: assert.AnError,
 		},
 		{
-			name: "UserRepository return error",
+			name: "AuditRepository return error",
 			args: args{
 				ctx: ctx,
 				id:  id,
@@ -111,15 +125,50 @@ func TestDelete(t *testing.T) {
 				auditRepoMock := mocks.NewAuditRepositoryMock(mc)
 				auditRepoMock.SaveMock.Expect(ctx, audit).Return(assert.AnError)
 
+				userCacheRepoMock := mocks.NewUserCacheRepositoryMock(mc)
+				userCacheRepoMock.DeleteMock.Expect(ctx, id).Return(nil)
+
 				txManagerMock := dbMocks.NewTxManagerMock(mc)
 				txManagerMock.ReadCommitedMock.Set(func(ctx context.Context, f db.Handler) (err error) {
 					return f(ctx)
 				})
 
 				return deps{
-					userRepository:  userRepoMock,
-					auditRepository: auditRepoMock,
-					txManager:       txManagerMock,
+					userCacheRepository: userCacheRepoMock,
+					userRepository:      userRepoMock,
+					auditRepository:     auditRepoMock,
+					txManager:           txManagerMock,
+					ttl:                 ttl,
+				}
+			},
+			err: assert.AnError,
+		},
+		{
+			name: "UserCacheRepository return error",
+			args: args{
+				ctx: ctx,
+				id:  id,
+			},
+			mockFunc: func(mc *minimock.Controller) deps {
+				userRepoMock := mocks.NewUserRepositoryMock(mc)
+				userRepoMock.DeleteMock.Expect(ctx, id).Return(nil)
+
+				auditRepoMock := mocks.NewAuditRepositoryMock(mc)
+
+				userCacheRepoMock := mocks.NewUserCacheRepositoryMock(mc)
+				userCacheRepoMock.DeleteMock.Expect(ctx, id).Return(assert.AnError)
+
+				txManagerMock := dbMocks.NewTxManagerMock(mc)
+				txManagerMock.ReadCommitedMock.Set(func(ctx context.Context, f db.Handler) (err error) {
+					return f(ctx)
+				})
+
+				return deps{
+					userCacheRepository: userCacheRepoMock,
+					userRepository:      userRepoMock,
+					auditRepository:     auditRepoMock,
+					txManager:           txManagerMock,
+					ttl:                 ttl,
 				}
 			},
 			err: assert.AnError,
@@ -134,9 +183,11 @@ func TestDelete(t *testing.T) {
 			deps := tt.mockFunc(mc)
 
 			userSrv := user.NewService(
+				deps.userCacheRepository,
 				deps.auditRepository,
 				deps.userRepository,
 				deps.txManager,
+				deps.ttl,
 			)
 
 			err := userSrv.Delete(tt.args.ctx, tt.args.id)

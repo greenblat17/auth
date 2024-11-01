@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/gojuno/minimock/v3"
 	"github.com/greenblat17/auth/internal/model"
@@ -24,9 +25,11 @@ func TestCreate(t *testing.T) {
 	}
 
 	type deps struct {
-		userRepository  repository.UserRepository
-		auditRepository repository.AuditRepository
-		txManager       db.TxManager
+		userCacheRepository repository.UserCacheRepository
+		userRepository      repository.UserRepository
+		auditRepository     repository.AuditRepository
+		txManager           db.TxManager
+		ttl                 time.Duration
 	}
 
 	var (
@@ -46,6 +49,8 @@ func TestCreate(t *testing.T) {
 			Password: "testpass",
 			Role:     model.RoleUser,
 		}
+
+		ttl = time.Second
 	)
 
 	tests := []struct {
@@ -77,6 +82,7 @@ func TestCreate(t *testing.T) {
 					userRepository:  userRepoMock,
 					auditRepository: auditRepoMock,
 					txManager:       txManagerMock,
+					ttl:             ttl,
 				}
 			},
 			want: id,
@@ -103,6 +109,7 @@ func TestCreate(t *testing.T) {
 					userRepository:  userRepoMock,
 					auditRepository: auditRepoMock,
 					txManager:       txManagerMock,
+					ttl:             ttl,
 				}
 			},
 			want: 0,
@@ -130,6 +137,7 @@ func TestCreate(t *testing.T) {
 					userRepository:  userRepoMock,
 					auditRepository: auditRepoMock,
 					txManager:       txManagerMock,
+					ttl:             ttl,
 				}
 			},
 			want: 0,
@@ -145,9 +153,11 @@ func TestCreate(t *testing.T) {
 			deps := tt.mockFunc(mc)
 
 			userSrv := user.NewService(
+				deps.userCacheRepository,
 				deps.auditRepository,
 				deps.userRepository,
 				deps.txManager,
+				deps.ttl,
 			)
 
 			id, err := userSrv.Create(tt.args.ctx, tt.args.userInfo)

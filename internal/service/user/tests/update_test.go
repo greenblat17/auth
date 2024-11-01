@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/gojuno/minimock/v3"
 	"github.com/greenblat17/auth/internal/model"
@@ -25,9 +26,11 @@ func TestUpdate(t *testing.T) {
 	}
 
 	type deps struct {
-		userRepository  repository.UserRepository
-		auditRepository repository.AuditRepository
-		txManager       db.TxManager
+		userCacheRepository repository.UserCacheRepository
+		userRepository      repository.UserRepository
+		auditRepository     repository.AuditRepository
+		txManager           db.TxManager
+		ttl                 time.Duration
 	}
 
 	var (
@@ -44,6 +47,8 @@ func TestUpdate(t *testing.T) {
 			Entity: model.UserEntityType,
 			Action: "update",
 		}
+
+		ttl = time.Second
 	)
 
 	tests := []struct {
@@ -63,6 +68,10 @@ func TestUpdate(t *testing.T) {
 				userRepoMock := mocks.NewUserRepositoryMock(mc)
 				userRepoMock.UpdateMock.Expect(ctx, user).Return(nil)
 
+				userCacheRepoMock := mocks.NewUserCacheRepositoryMock(mc)
+				userCacheRepoMock.SetMock.Expect(ctx, user).Return(id, nil)
+				userCacheRepoMock.ExpireMock.Expect(ctx, id, ttl).Return(nil)
+
 				auditRepoMock := mocks.NewAuditRepositoryMock(mc)
 				auditRepoMock.SaveMock.Expect(ctx, audit).Return(nil)
 
@@ -72,9 +81,11 @@ func TestUpdate(t *testing.T) {
 				})
 
 				return deps{
-					userRepository:  userRepoMock,
-					auditRepository: auditRepoMock,
-					txManager:       txManagerMock,
+					userCacheRepository: userCacheRepoMock,
+					userRepository:      userRepoMock,
+					auditRepository:     auditRepoMock,
+					txManager:           txManagerMock,
+					ttl:                 ttl,
 				}
 			},
 		},
@@ -89,6 +100,8 @@ func TestUpdate(t *testing.T) {
 				userRepoMock := mocks.NewUserRepositoryMock(mc)
 				userRepoMock.UpdateMock.Expect(ctx, user).Return(assert.AnError)
 
+				userCacheRepoMock := mocks.NewUserCacheRepositoryMock(mc)
+
 				auditRepoMock := mocks.NewAuditRepositoryMock(mc)
 
 				txManagerMock := dbMocks.NewTxManagerMock(mc)
@@ -97,9 +110,11 @@ func TestUpdate(t *testing.T) {
 				})
 
 				return deps{
-					userRepository:  userRepoMock,
-					auditRepository: auditRepoMock,
-					txManager:       txManagerMock,
+					userCacheRepository: userCacheRepoMock,
+					userRepository:      userRepoMock,
+					auditRepository:     auditRepoMock,
+					txManager:           txManagerMock,
+					ttl:                 ttl,
 				}
 			},
 			err: assert.AnError,
@@ -115,6 +130,10 @@ func TestUpdate(t *testing.T) {
 				userRepoMock := mocks.NewUserRepositoryMock(mc)
 				userRepoMock.UpdateMock.Expect(ctx, user).Return(nil)
 
+				userCacheRepoMock := mocks.NewUserCacheRepositoryMock(mc)
+				userCacheRepoMock.SetMock.Expect(ctx, user).Return(id, nil)
+				userCacheRepoMock.ExpireMock.Expect(ctx, id, ttl).Return(nil)
+
 				auditRepoMock := mocks.NewAuditRepositoryMock(mc)
 				auditRepoMock.SaveMock.Expect(ctx, audit).Return(assert.AnError)
 
@@ -124,9 +143,74 @@ func TestUpdate(t *testing.T) {
 				})
 
 				return deps{
-					userRepository:  userRepoMock,
-					auditRepository: auditRepoMock,
-					txManager:       txManagerMock,
+					userCacheRepository: userCacheRepoMock,
+					userRepository:      userRepoMock,
+					auditRepository:     auditRepoMock,
+					txManager:           txManagerMock,
+					ttl:                 ttl,
+				}
+			},
+			err: assert.AnError,
+		},
+		{
+			name: "Set user to cache return error",
+			args: args{
+				ctx:  ctx,
+				id:   id,
+				user: user,
+			},
+			mockFunc: func(mc *minimock.Controller) deps {
+				userRepoMock := mocks.NewUserRepositoryMock(mc)
+				userRepoMock.UpdateMock.Expect(ctx, user).Return(nil)
+
+				userCacheRepoMock := mocks.NewUserCacheRepositoryMock(mc)
+				userCacheRepoMock.SetMock.Expect(ctx, user).Return(int64(0), assert.AnError)
+
+				auditRepoMock := mocks.NewAuditRepositoryMock(mc)
+
+				txManagerMock := dbMocks.NewTxManagerMock(mc)
+				txManagerMock.ReadCommitedMock.Set(func(ctx context.Context, f db.Handler) (err error) {
+					return f(ctx)
+				})
+
+				return deps{
+					userCacheRepository: userCacheRepoMock,
+					userRepository:      userRepoMock,
+					auditRepository:     auditRepoMock,
+					txManager:           txManagerMock,
+					ttl:                 ttl,
+				}
+			},
+			err: assert.AnError,
+		},
+		{
+			name: "set expire time in cache return error",
+			args: args{
+				ctx:  ctx,
+				id:   id,
+				user: user,
+			},
+			mockFunc: func(mc *minimock.Controller) deps {
+				userRepoMock := mocks.NewUserRepositoryMock(mc)
+				userRepoMock.UpdateMock.Expect(ctx, user).Return(nil)
+
+				userCacheRepoMock := mocks.NewUserCacheRepositoryMock(mc)
+				userCacheRepoMock.SetMock.Expect(ctx, user).Return(id, nil)
+				userCacheRepoMock.ExpireMock.Expect(ctx, id, ttl).Return(assert.AnError)
+
+				auditRepoMock := mocks.NewAuditRepositoryMock(mc)
+
+				txManagerMock := dbMocks.NewTxManagerMock(mc)
+				txManagerMock.ReadCommitedMock.Set(func(ctx context.Context, f db.Handler) (err error) {
+					return f(ctx)
+				})
+
+				return deps{
+					userCacheRepository: userCacheRepoMock,
+					userRepository:      userRepoMock,
+					auditRepository:     auditRepoMock,
+					txManager:           txManagerMock,
+					ttl:                 ttl,
 				}
 			},
 			err: assert.AnError,
@@ -141,9 +225,11 @@ func TestUpdate(t *testing.T) {
 			deps := tt.mockFunc(mc)
 
 			userSrv := userService.NewService(
+				deps.userCacheRepository,
 				deps.auditRepository,
 				deps.userRepository,
 				deps.txManager,
+				deps.ttl,
 			)
 
 			err := userSrv.Update(tt.args.ctx, tt.args.user)
