@@ -8,12 +8,20 @@ import (
 )
 
 func (s *service) Get(ctx context.Context, id int64) (*model.User, error) {
-	var user *model.User
+	user, err := s.getUserFromCache(ctx, id)
+	if nil == err {
+		return user, nil
+	}
 
-	err := s.txManager.ReadCommited(ctx, func(ctx context.Context) error {
+	err = s.txManager.ReadCommited(ctx, func(ctx context.Context) error {
 		var errTx error
 
 		user, errTx = s.userRepository.Get(ctx, id)
+		if errTx != nil {
+			return errTx
+		}
+
+		errTx = s.setUserToCache(ctx, user)
 		if errTx != nil {
 			return errTx
 		}
@@ -25,7 +33,6 @@ func (s *service) Get(ctx context.Context, id int64) (*model.User, error) {
 
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}

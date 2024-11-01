@@ -16,6 +16,11 @@ func (s *service) Update(ctx context.Context, user *model.User) error {
 			return errTx
 		}
 
+		errTx = s.setUserToCache(ctx, user)
+		if errTx != nil {
+			return errTx
+		}
+
 		errTx = s.auditRepository.Save(ctx, converter.ToAuditFromEntity(model.UserEntityType, "update"))
 		if errTx != nil {
 			return errTx

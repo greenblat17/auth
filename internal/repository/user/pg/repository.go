@@ -1,15 +1,14 @@
-package user
+package pg
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/greenblat17/auth/internal/model"
 	"github.com/greenblat17/auth/internal/repository"
-	"github.com/greenblat17/auth/internal/repository/user/converter"
-	modelRepo "github.com/greenblat17/auth/internal/repository/user/model"
+	"github.com/greenblat17/auth/internal/repository/user/pg/converter"
+	modelRepo "github.com/greenblat17/auth/internal/repository/user/pg/model"
 	"github.com/greenblat17/platform-common/pkg/db"
 	"github.com/jackc/pgx/v4"
 )
@@ -24,11 +23,6 @@ const (
 	passwordColumn  = "password"
 	createdAtColumn = "created_at"
 	updatedAtColumn = "updated_at"
-)
-
-var (
-	// ErrNotFound is returned when a user is not found.
-	ErrNotFound = errors.New("user not found")
 )
 
 type repo struct {
@@ -120,7 +114,7 @@ func (r *repo) Get(ctx context.Context, id int64) (*model.User, error) {
 	err = r.db.DB().ScanOneContext(ctx, &user, q, args...)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, ErrNotFound
+			return nil, repository.ErrUserNotFound
 		}
 		return nil, err
 	}
@@ -150,7 +144,7 @@ func (r *repo) Delete(ctx context.Context, id int64) error {
 
 	rowsAffected := cmdTag.RowsAffected()
 	if rowsAffected == 0 {
-		return ErrNotFound
+		return repository.ErrUserNotFound
 	}
 
 	return nil
