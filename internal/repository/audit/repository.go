@@ -5,9 +5,9 @@ import (
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/greenblat17/auth/internal/client/db"
 	"github.com/greenblat17/auth/internal/model"
 	"github.com/greenblat17/auth/internal/repository"
+	"github.com/greenblat17/platform-common/pkg/db"
 )
 
 const (

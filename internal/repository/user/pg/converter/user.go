@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/greenblat17/auth/internal/model"
-	modelRepo "github.com/greenblat17/auth/internal/repository/user/model"
+	modelRepo "github.com/greenblat17/auth/internal/repository/user/pg/model"
 )
 
 // ToUserFromRepo converts repo user to model user

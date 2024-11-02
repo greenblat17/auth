@@ -16,6 +16,11 @@ func (s *service) Delete(ctx context.Context, id int64) error {
 			return errTx
 		}
 
+		errTx = s.deleteUserFromCache(ctx, id)
+		if errTx != nil {
+			return errTx
+		}
+
 		errTx = s.auditRepository.Save(ctx, converter.ToAuditFromEntity(model.UserEntityType, "delete"))
 		if errTx != nil {
 			return errTx

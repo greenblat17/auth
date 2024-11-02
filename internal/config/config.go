@@ -1,16 +1,10 @@
 package config
 
-import "github.com/joho/godotenv"
+import (
+	"time"
 
-// Load loads configuration from environment variables file
-func Load(path string) error {
-	err := godotenv.Load(path)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
+	"github.com/joho/godotenv"
+)
 
 // GRPCConfig is the configuration for the gRPC server
 type GRPCConfig interface {
@@ -20,4 +14,23 @@ type GRPCConfig interface {
 // PGConfig is the configuration for the PostgreSQL database
 type PGConfig interface {
 	DSN() string
+}
+
+// RedisConfig is the configuration for Redis database
+type RedisConfig interface {
+	Address() string
+	ConnectionTimeout() time.Duration
+	MaxIdle() int
+	IdleTimeout() time.Duration
+	TTL() time.Duration
+}
+
+// Load loads configuration from environment variables file
+func Load(path string) error {
+	err := godotenv.Load(path)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

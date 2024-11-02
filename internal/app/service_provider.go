@@ -4,28 +4,38 @@ import (
 	"context"
 	"log"
 
+	redigo "github.com/gomodule/redigo/redis"
 	"github.com/greenblat17/auth/internal/api/user"
-	"github.com/greenblat17/auth/internal/client/db"
-	"github.com/greenblat17/auth/internal/client/db/pg"
-	"github.com/greenblat17/auth/internal/client/db/transaction"
-	"github.com/greenblat17/auth/internal/closer"
+	"github.com/greenblat17/auth/internal/cleint/cache"
+	"github.com/greenblat17/auth/internal/cleint/cache/redis"
 	"github.com/greenblat17/auth/internal/config"
 	"github.com/greenblat17/auth/internal/config/env"
 	"github.com/greenblat17/auth/internal/repository"
 	"github.com/greenblat17/auth/internal/repository/audit"
-	userRepository "github.com/greenblat17/auth/internal/repository/user"
+	userRepository "github.com/greenblat17/auth/internal/repository/user/pg"
+	userCacheRepository "github.com/greenblat17/auth/internal/repository/user/redis"
 	"github.com/greenblat17/auth/internal/service"
 	userService "github.com/greenblat17/auth/internal/service/user"
+	"github.com/greenblat17/platform-common/pkg/closer"
+	"github.com/greenblat17/platform-common/pkg/db"
+	"github.com/greenblat17/platform-common/pkg/db/pg"
+	"github.com/greenblat17/platform-common/pkg/db/transaction"
 )
 
 type serviceProvider struct {
-	pgConfig   config.PGConfig
-	grpcConfig config.GRPCConfig
+	pgConfig    config.PGConfig
+	grpcConfig  config.GRPCConfig
+	redisConfig config.RedisConfig
 
-	dbClient        db.Client
-	txManager       db.TxManager
-	userRepository  repository.UserRepository
-	auditRepository repository.AuditRepository
+	dbClient  db.Client
+	txManager db.TxManager
+
+	redisPool   *redigo.Pool
+	redisClient cache.RedisClient
+
+	userCacheRepository repository.UserCacheRepository
+	userRepository      repository.UserRepository
+	auditRepository     repository.AuditRepository
 
 	userService service.UserService
 
@@ -60,6 +70,41 @@ func (s *serviceProvider) GRPCConfig() config.GRPCConfig {
 	}
 
 	return s.grpcConfig
+}
+
+func (s *serviceProvider) RedisConfig() config.RedisConfig {
+	if s.redisConfig == nil {
+		cfg, err := env.NewRedisConfig()
+		if err != nil {
+			log.Fatalf("failed to get redis config: %v", err)
+		}
+
+		s.redisConfig = cfg
+	}
+
+	return s.redisConfig
+}
+
+func (s *serviceProvider) RedisPool() *redigo.Pool {
+	if s.redisPool == nil {
+		s.redisPool = &redigo.Pool{
+			MaxIdle:     s.RedisConfig().MaxIdle(),
+			IdleTimeout: s.RedisConfig().IdleTimeout(),
+			DialContext: func(ctx context.Context) (redigo.Conn, error) {
+				return redigo.DialContext(ctx, "tcp", s.RedisConfig().Address())
+			},
+		}
+	}
+
+	return s.redisPool
+}
+
+func (s *serviceProvider) RedisClient() cache.RedisClient {
+	if s.redisClient == nil {
+		s.redisClient = redis.NewClient(s.RedisPool(), s.RedisConfig())
+	}
+
+	return s.redisClient
 }
 
 func (s *serviceProvider) DBClient(ctx context.Context) db.Client {
@@ -105,12 +150,22 @@ func (s *serviceProvider) UserRepository(ctx context.Context) repository.UserRep
 	return s.userRepository
 }
 
+func (s *serviceProvider) UserCacheRepository() repository.UserCacheRepository {
+	if s.userCacheRepository == nil {
+		s.userCacheRepository = userCacheRepository.NewRepository(s.RedisClient())
+	}
+
+	return s.userCacheRepository
+}
+
 func (s *serviceProvider) UserService(ctx context.Context) service.UserService {
 	if s.userService == nil {
 		s.userService = userService.NewService(
+			s.UserCacheRepository(),
 			s.AuditRepository(ctx),
 			s.UserRepository(ctx),
 			s.TxManager(ctx),
+			s.RedisConfig().TTL(),
 		)
 	}
 
