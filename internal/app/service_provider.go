@@ -6,8 +6,8 @@ import (
 
 	redigo "github.com/gomodule/redigo/redis"
 	"github.com/greenblat17/auth/internal/api/user"
-	"github.com/greenblat17/auth/internal/cleint/cache"
-	"github.com/greenblat17/auth/internal/cleint/cache/redis"
+	"github.com/greenblat17/auth/internal/client/cache"
+	"github.com/greenblat17/auth/internal/client/cache/redis"
 	"github.com/greenblat17/auth/internal/config"
 	"github.com/greenblat17/auth/internal/config/env"
 	"github.com/greenblat17/auth/internal/repository"
@@ -26,6 +26,7 @@ type serviceProvider struct {
 	pgConfig    config.PGConfig
 	grpcConfig  config.GRPCConfig
 	redisConfig config.RedisConfig
+	httpConfig  config.HTTPConfig
 
 	dbClient  db.Client
 	txManager db.TxManager
@@ -70,6 +71,19 @@ func (s *serviceProvider) GRPCConfig() config.GRPCConfig {
 	}
 
 	return s.grpcConfig
+}
+
+func (s *serviceProvider) HTTPConfig() config.HTTPConfig {
+	if s.httpConfig == nil {
+		cfg, err := env.NewHTTPConfig()
+		if err != nil {
+			log.Fatalf("failed to get http config: %v", err)
+		}
+
+		s.httpConfig = cfg
+	}
+
+	return s.httpConfig
 }
 
 func (s *serviceProvider) RedisConfig() config.RedisConfig {

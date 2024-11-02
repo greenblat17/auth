@@ -6,7 +6,7 @@ import (
 	"time"
 
 	redigo "github.com/gomodule/redigo/redis"
-	"github.com/greenblat17/auth/internal/cleint/cache"
+	"github.com/greenblat17/auth/internal/client/cache"
 	"github.com/greenblat17/auth/internal/model"
 	"github.com/greenblat17/auth/internal/repository"
 	"github.com/greenblat17/auth/internal/repository/user/redis/converter"
