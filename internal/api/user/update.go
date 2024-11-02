@@ -10,7 +10,12 @@ import (
 
 // Update updates an existing user
 func (i *Implementation) Update(ctx context.Context, req *desc.UpdateRequest) (*emptypb.Empty, error) {
-	err := i.userService.Update(ctx, converter.ToUserFromUpdateAPI(req))
+	err := req.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	err = i.userService.Update(ctx, converter.ToUserFromUpdateAPI(req))
 	if err != nil {
 		return nil, err
 	}

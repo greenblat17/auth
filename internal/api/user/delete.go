@@ -9,7 +9,12 @@ import (
 
 // Delete deletes a user by ID
 func (i *Implementation) Delete(ctx context.Context, req *desc.DeleteRequest) (*emptypb.Empty, error) {
-	err := i.userService.Delete(ctx, req.GetId())
+	err := req.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	err = i.userService.Delete(ctx, req.GetId())
 	if err != nil {
 		return nil, err
 	}

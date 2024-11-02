@@ -9,6 +9,11 @@ import (
 
 // Get returns the user
 func (i *Implementation) Get(ctx context.Context, req *desc.GetRequest) (*desc.GetResponse, error) {
+	err := req.Validate()
+	if err != nil {
+		return nil, err
+	}
+
 	userObj, err := i.userService.Get(ctx, req.GetId())
 	if err != nil {
 		return nil, err

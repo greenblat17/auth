@@ -9,6 +9,11 @@ import (
 
 // Create creates a new user
 func (i *Implementation) Create(ctx context.Context, req *desc.CreateRequest) (*desc.CreateResponse, error) {
+	err := req.Validate()
+	if err != nil {
+		return nil, err
+	}
+
 	id, err := i.userService.Create(ctx, converter.ToUserInfoFromCreateAPI(req))
 	if err != nil {
 		return nil, err
