@@ -47,8 +47,11 @@ vendor-proto:
 			rm -rf vendor.protogen/openapiv2 ;\
 		fi
 
+# generating go files
 generate:
+	mkdir -p pkg/swagger
 	make generate-user-api
+	$(LOCAL_BIN)/statik -src=pkg/swagger/ -include='*.css,*.html,*.js,*.json,*.png'
 
 generate-user-api:
 	mkdir -p pkg/user_v1
@@ -61,6 +64,8 @@ generate-user-api:
 	--plugin=protoc-gen-grpc-gateway=bin/protoc-gen-grpc-gateway \
 	--validate_out lang=go:pkg/user_v1 --validate_opt=paths=source_relative \
 	--plugin=protoc-gen-validate=bin/protoc-gen-validate \
+	--openapiv2_out=allow_merge=true,merge_file_name=user:pkg/swagger \
+	--plugin=protoc-gen-openapiv2=bin/protoc-gen-openapiv2 \
 	api/user_v1/user.proto
 
 # migration

@@ -30,6 +30,11 @@ type RedisConfig interface {
 	TTL() time.Duration
 }
 
+// SwaggerConfig is the configuration for Swagger server
+type SwaggerConfig interface {
+	Address() string
+}
+
 // Load loads configuration from environment variables file
 func Load(path string) error {
 	err := godotenv.Load(path)
