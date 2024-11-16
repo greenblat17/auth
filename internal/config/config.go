@@ -30,6 +30,12 @@ type RedisConfig interface {
 	TTL() time.Duration
 }
 
+// KafkaConfig is the configuration for Kafka
+type KafkaConfig interface {
+	Brokers() []string
+	Retry() int
+}
+
 // SwaggerConfig is the configuration for Swagger server
 type SwaggerConfig interface {
 	Address() string
