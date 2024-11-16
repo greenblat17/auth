@@ -9,6 +9,8 @@ import (
 	"github.com/greenblat17/auth/internal/model"
 	"github.com/greenblat17/auth/internal/repository"
 	"github.com/greenblat17/auth/internal/repository/mocks"
+	"github.com/greenblat17/auth/internal/service"
+	producerMocks "github.com/greenblat17/auth/internal/service/mocks"
 	"github.com/greenblat17/auth/internal/service/user"
 	"github.com/greenblat17/platform-common/pkg/db"
 	dbMocks "github.com/greenblat17/platform-common/pkg/db/mocks"
@@ -25,6 +27,7 @@ func TestCreate(t *testing.T) {
 	}
 
 	type deps struct {
+		userSaverProducer   service.UserSaverProducer
 		userCacheRepository repository.UserCacheRepository
 		userRepository      repository.UserRepository
 		auditRepository     repository.AuditRepository
@@ -78,11 +81,15 @@ func TestCreate(t *testing.T) {
 					return f(ctx)
 				})
 
+				userSaverProducerMock := producerMocks.NewUserSaverProducerMock(mc)
+				userSaverProducerMock.SendMock.Expect(ctx, userInfo).Return(nil)
+
 				return deps{
-					userRepository:  userRepoMock,
-					auditRepository: auditRepoMock,
-					txManager:       txManagerMock,
-					ttl:             ttl,
+					userSaverProducer: userSaverProducerMock,
+					userRepository:    userRepoMock,
+					auditRepository:   auditRepoMock,
+					txManager:         txManagerMock,
+					ttl:               ttl,
 				}
 			},
 			want: id,
@@ -105,11 +112,14 @@ func TestCreate(t *testing.T) {
 					return f(ctx)
 				})
 
+				userSaverProducerMock := producerMocks.NewUserSaverProducerMock(mc)
+
 				return deps{
-					userRepository:  userRepoMock,
-					auditRepository: auditRepoMock,
-					txManager:       txManagerMock,
-					ttl:             ttl,
+					userSaverProducer: userSaverProducerMock,
+					userRepository:    userRepoMock,
+					auditRepository:   auditRepoMock,
+					txManager:         txManagerMock,
+					ttl:               ttl,
 				}
 			},
 			want: 0,
@@ -133,11 +143,47 @@ func TestCreate(t *testing.T) {
 					return f(ctx)
 				})
 
+				userSaverProducerMock := producerMocks.NewUserSaverProducerMock(mc)
+
 				return deps{
-					userRepository:  userRepoMock,
-					auditRepository: auditRepoMock,
-					txManager:       txManagerMock,
-					ttl:             ttl,
+					userSaverProducer: userSaverProducerMock,
+					userRepository:    userRepoMock,
+					auditRepository:   auditRepoMock,
+					txManager:         txManagerMock,
+					ttl:               ttl,
+				}
+			},
+			want: 0,
+			err:  assert.AnError,
+		},
+
+		{
+			name: "UserSaverProducer return error",
+			args: args{
+				ctx:      ctx,
+				userInfo: userInfo,
+			},
+			mockFunc: func(mc *minimock.Controller) deps {
+				userRepoMock := mocks.NewUserRepositoryMock(mc)
+				userRepoMock.CreateMock.Expect(ctx, userInfo).Return(id, nil)
+
+				auditRepoMock := mocks.NewAuditRepositoryMock(mc)
+				auditRepoMock.SaveMock.Expect(ctx, audit).Return(nil)
+
+				txManagerMock := dbMocks.NewTxManagerMock(mc)
+				txManagerMock.ReadCommitedMock.Set(func(ctx context.Context, f db.Handler) (err error) {
+					return f(ctx)
+				})
+
+				userSaverProducerMock := producerMocks.NewUserSaverProducerMock(mc)
+				userSaverProducerMock.SendMock.Expect(ctx, userInfo).Return(assert.AnError)
+
+				return deps{
+					userSaverProducer: userSaverProducerMock,
+					userRepository:    userRepoMock,
+					auditRepository:   auditRepoMock,
+					txManager:         txManagerMock,
+					ttl:               ttl,
 				}
 			},
 			want: 0,
@@ -153,6 +199,7 @@ func TestCreate(t *testing.T) {
 			deps := tt.mockFunc(mc)
 
 			userSrv := user.NewService(
+				deps.userSaverProducer,
 				deps.userCacheRepository,
 				deps.auditRepository,
 				deps.userRepository,
