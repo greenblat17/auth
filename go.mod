@@ -5,6 +5,7 @@ go 1.22
 toolchain go1.22.8
 
 require (
+	github.com/IBM/sarama v1.43.3
 	github.com/envoyproxy/protoc-gen-validate v1.1.0
 	github.com/gojuno/minimock/v3 v3.4.1
 	github.com/gomodule/redigo v1.9.2
@@ -18,7 +19,6 @@ require (
 )
 
 require (
-	github.com/IBM/sarama v1.43.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/eapache/go-resiliency v1.7.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20230731223053-c322873962e3 // indirect
