@@ -13,3 +13,8 @@ type UserService interface {
 	Get(ctx context.Context, id int64) (*model.User, error)
 	Delete(ctx context.Context, id int64) error
 }
+
+// UserSaverProducer is an interface that provides method for User Saver Producer
+type UserSaverProducer interface {
+	Send(ctx context.Context, userInfo *model.UserInfo) error
+}

@@ -9,6 +9,7 @@ import (
 	"github.com/greenblat17/auth/internal/model"
 	"github.com/greenblat17/auth/internal/repository"
 	"github.com/greenblat17/auth/internal/repository/mocks"
+	"github.com/greenblat17/auth/internal/service"
 	userService "github.com/greenblat17/auth/internal/service/user"
 	"github.com/greenblat17/platform-common/pkg/db"
 	dbMocks "github.com/greenblat17/platform-common/pkg/db/mocks"
@@ -25,6 +26,7 @@ func TestGet(t *testing.T) {
 	}
 
 	type deps struct {
+		userSaverProducer   service.UserSaverProducer
 		userCacheRepository repository.UserCacheRepository
 		userRepository      repository.UserRepository
 		auditRepository     repository.AuditRepository
@@ -257,6 +259,7 @@ func TestGet(t *testing.T) {
 			deps := tt.mockFunc(mc)
 
 			userSrv := userService.NewService(
+				deps.userSaverProducer,
 				deps.userCacheRepository,
 				deps.auditRepository,
 				deps.userRepository,

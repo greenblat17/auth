@@ -30,5 +30,10 @@ func (s *service) Create(ctx context.Context, userInfo *model.UserInfo) (int64, 
 		return 0, err
 	}
 
+	err = s.userSaverProducer.Send(ctx, userInfo)
+	if err != nil {
+		return 0, err
+	}
+
 	return id, nil
 }

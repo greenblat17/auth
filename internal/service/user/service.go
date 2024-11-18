@@ -11,6 +11,7 @@ import (
 var _ def.UserService = (*service)(nil)
 
 type service struct {
+	userSaverProducer   def.UserSaverProducer
 	userCacheRepository repository.UserCacheRepository
 	auditRepository     repository.AuditRepository
 	userRepository      repository.UserRepository
@@ -20,6 +21,7 @@ type service struct {
 
 // NewService returns a new service
 func NewService(
+	userSaverProducer def.UserSaverProducer,
 	userCacheRepository repository.UserCacheRepository,
 	auditRepository repository.AuditRepository,
 	userRepository repository.UserRepository,
@@ -27,6 +29,7 @@ func NewService(
 	ttl time.Duration,
 ) *service {
 	return &service{
+		userSaverProducer:   userSaverProducer,
 		userCacheRepository: userCacheRepository,
 		auditRepository:     auditRepository,
 		userRepository:      userRepository,

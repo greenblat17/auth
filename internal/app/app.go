@@ -4,14 +4,12 @@ import (
 	"context"
 	"flag"
 	"log"
-	"net"
+	"net/http"
+	"sync"
 
 	"github.com/greenblat17/auth/internal/config"
-	desc "github.com/greenblat17/auth/pkg/user_v1"
 	"github.com/greenblat17/platform-common/pkg/closer"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/reflection"
 )
 
 var configPath string
@@ -24,6 +22,8 @@ func init() {
 type App struct {
 	serviceProvider *serviceProvider
 	grpcServer      *grpc.Server
+	httpServer      *http.Server
+	swaggerServer   *http.Server
 }
 
 // NewApp returns a new App instance
@@ -45,7 +45,39 @@ func (a *App) Run() error {
 		closer.Wait()
 	}()
 
-	return a.runGRPCServer()
+	wg := sync.WaitGroup{}
+	wg.Add(3)
+
+	go func() {
+		defer wg.Done()
+
+		err := a.runGRPCServer()
+		if err != nil {
+			log.Fatalf("failed to run gRPC Server: %v", err)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+
+		err := a.runHTTPServer()
+		if err != nil {
+			log.Fatalf("failed to run HTTP Server: %v", err)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+
+		err := a.runSwaggerServer()
+		if err != nil {
+			log.Fatalf("failed to run Swagger Server: %v", err)
+		}
+	}()
+
+	wg.Wait()
+
+	return nil
 }
 
 func (a *App) initDeps(ctx context.Context) error {
@@ -53,6 +85,8 @@ func (a *App) initDeps(ctx context.Context) error {
 		a.initConfig,
 		a.initServiceProvider,
 		a.initGRPCServer,
+		a.initHTTPServer,
+		a.initSwaggerServer,
 	}
 
 	for _, f := range inits {
@@ -78,31 +112,5 @@ func (a *App) initConfig(_ context.Context) error {
 
 func (a *App) initServiceProvider(_ context.Context) error {
 	a.serviceProvider = newServiceProvider()
-	return nil
-}
-
-func (a *App) initGRPCServer(ctx context.Context) error {
-	a.grpcServer = grpc.NewServer(grpc.Creds(insecure.NewCredentials()))
-
-	reflection.Register(a.grpcServer)
-
-	desc.RegisterUserV1Server(a.grpcServer, a.serviceProvider.UserImplementation(ctx))
-
-	return nil
-}
-
-func (a *App) runGRPCServer() error {
-	log.Printf("GRPC server is running on %s", a.serviceProvider.GRPCConfig().Address())
-
-	lis, err := net.Listen("tcp", a.serviceProvider.GRPCConfig().Address())
-	if err != nil {
-		return err
-	}
-
-	err = a.grpcServer.Serve(lis)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }

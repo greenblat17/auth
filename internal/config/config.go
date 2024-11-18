@@ -11,6 +11,11 @@ type GRPCConfig interface {
 	Address() string
 }
 
+// HTTPConfig is the configuration for HTTP server
+type HTTPConfig interface {
+	Address() string
+}
+
 // PGConfig is the configuration for the PostgreSQL database
 type PGConfig interface {
 	DSN() string
@@ -23,6 +28,17 @@ type RedisConfig interface {
 	MaxIdle() int
 	IdleTimeout() time.Duration
 	TTL() time.Duration
+}
+
+// KafkaConfig is the configuration for Kafka
+type KafkaConfig interface {
+	Brokers() []string
+	Retry() int
+}
+
+// SwaggerConfig is the configuration for Swagger server
+type SwaggerConfig interface {
+	Address() string
 }
 
 // Load loads configuration from environment variables file

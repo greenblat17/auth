@@ -6,15 +6,17 @@ import (
 
 	redigo "github.com/gomodule/redigo/redis"
 	"github.com/greenblat17/auth/internal/api/user"
-	"github.com/greenblat17/auth/internal/cleint/cache"
-	"github.com/greenblat17/auth/internal/cleint/cache/redis"
+	"github.com/greenblat17/auth/internal/client/cache"
+	"github.com/greenblat17/auth/internal/client/cache/redis"
+	"github.com/greenblat17/auth/internal/client/kafka"
+	"github.com/greenblat17/auth/internal/client/kafka/producer"
 	"github.com/greenblat17/auth/internal/config"
-	"github.com/greenblat17/auth/internal/config/env"
 	"github.com/greenblat17/auth/internal/repository"
 	"github.com/greenblat17/auth/internal/repository/audit"
 	userRepository "github.com/greenblat17/auth/internal/repository/user/pg"
 	userCacheRepository "github.com/greenblat17/auth/internal/repository/user/redis"
 	"github.com/greenblat17/auth/internal/service"
+	"github.com/greenblat17/auth/internal/service/producer/user_saver"
 	userService "github.com/greenblat17/auth/internal/service/user"
 	"github.com/greenblat17/platform-common/pkg/closer"
 	"github.com/greenblat17/platform-common/pkg/db"
@@ -22,16 +24,26 @@ import (
 	"github.com/greenblat17/platform-common/pkg/db/transaction"
 )
 
+const (
+	userSaverProducerTopic = "user-save-topic"
+)
+
 type serviceProvider struct {
-	pgConfig    config.PGConfig
-	grpcConfig  config.GRPCConfig
-	redisConfig config.RedisConfig
+	pgConfig      config.PGConfig
+	grpcConfig    config.GRPCConfig
+	redisConfig   config.RedisConfig
+	httpConfig    config.HTTPConfig
+	swaggerConfig config.SwaggerConfig
+	kafkaConfig   config.KafkaConfig
 
 	dbClient  db.Client
 	txManager db.TxManager
 
 	redisPool   *redigo.Pool
 	redisClient cache.RedisClient
+
+	producer          kafka.Producer
+	userSaverProducer service.UserSaverProducer
 
 	userCacheRepository repository.UserCacheRepository
 	userRepository      repository.UserRepository
@@ -44,45 +56,6 @@ type serviceProvider struct {
 
 func newServiceProvider() *serviceProvider {
 	return &serviceProvider{}
-}
-
-func (s *serviceProvider) PGConfig() config.PGConfig {
-	if s.pgConfig == nil {
-		cfg, err := env.NewPGConfig()
-		if err != nil {
-			log.Fatalf("failed to get pg config: %v", err)
-		}
-
-		s.pgConfig = cfg
-	}
-
-	return s.pgConfig
-}
-
-func (s *serviceProvider) GRPCConfig() config.GRPCConfig {
-	if s.grpcConfig == nil {
-		cfg, err := env.NewGRPCConfig()
-		if err != nil {
-			log.Fatalf("failed to get grpc config: %v", err)
-		}
-
-		s.grpcConfig = cfg
-	}
-
-	return s.grpcConfig
-}
-
-func (s *serviceProvider) RedisConfig() config.RedisConfig {
-	if s.redisConfig == nil {
-		cfg, err := env.NewRedisConfig()
-		if err != nil {
-			log.Fatalf("failed to get redis config: %v", err)
-		}
-
-		s.redisConfig = cfg
-	}
-
-	return s.redisConfig
 }
 
 func (s *serviceProvider) RedisPool() *redigo.Pool {
@@ -134,6 +107,21 @@ func (s *serviceProvider) TxManager(ctx context.Context) db.TxManager {
 	return s.txManager
 }
 
+func (s *serviceProvider) Producer() kafka.Producer {
+	if s.producer == nil {
+		pr, err := producer.NewProducer(s.ProducerConfig())
+		if err != nil {
+			log.Fatalf("failed to create producer: %v", err)
+		}
+
+		closer.Add(pr.Close)
+
+		s.producer = pr
+	}
+
+	return s.producer
+}
+
 func (s *serviceProvider) AuditRepository(ctx context.Context) repository.AuditRepository {
 	if s.auditRepository == nil {
 		s.auditRepository = audit.NewRepository(s.DBClient(ctx))
@@ -158,9 +146,18 @@ func (s *serviceProvider) UserCacheRepository() repository.UserCacheRepository {
 	return s.userCacheRepository
 }
 
+func (s *serviceProvider) UserSaverProducer() service.UserSaverProducer {
+	if s.userSaverProducer == nil {
+		s.userSaverProducer = user_saver.NewProducer(s.Producer(), userSaverProducerTopic)
+	}
+
+	return s.userSaverProducer
+}
+
 func (s *serviceProvider) UserService(ctx context.Context) service.UserService {
 	if s.userService == nil {
 		s.userService = userService.NewService(
+			s.UserSaverProducer(),
 			s.UserCacheRepository(),
 			s.AuditRepository(ctx),
 			s.UserRepository(ctx),
