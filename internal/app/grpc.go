@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 
+	"github.com/greenblat17/auth/internal/interceptor"
 	desc "github.com/greenblat17/auth/pkg/user_v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -12,7 +13,10 @@ import (
 )
 
 func (a *App) initGRPCServer(ctx context.Context) error {
-	a.grpcServer = grpc.NewServer(grpc.Creds(insecure.NewCredentials()))
+	a.grpcServer = grpc.NewServer(
+		grpc.Creds(insecure.NewCredentials()),
+		grpc.UnaryInterceptor(interceptor.ValidateInterceptor),
+	)
 
 	reflection.Register(a.grpcServer)
 
