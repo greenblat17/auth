@@ -84,3 +84,29 @@ func (s *serviceProvider) ProducerConfig() config.KafkaConfig {
 
 	return s.kafkaConfig
 }
+
+func (s *serviceProvider) RefreshTokenConfig() config.TokenConfig {
+	if s.refreshTokenConfig == nil {
+		cfg, err := env.NewRefreshTokenConfig()
+		if err != nil {
+			log.Fatalf("failed to get refresh token config: %v", err)
+		}
+
+		s.refreshTokenConfig = cfg
+	}
+
+	return s.refreshTokenConfig
+}
+
+func (s *serviceProvider) AccessTokenConfig() config.TokenConfig {
+	if s.accessTokenConfig == nil {
+		cfg, err := env.NewAccessTokenConfig()
+		if err != nil {
+			log.Fatalf("failed to get access token config: %v", err)
+		}
+
+		s.accessTokenConfig = cfg
+	}
+
+	return s.accessTokenConfig
+}
