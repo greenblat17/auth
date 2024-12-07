@@ -41,6 +41,12 @@ type SwaggerConfig interface {
 	Address() string
 }
 
+// TokenConfig is the configuration for token generation
+type TokenConfig interface {
+	Secret() []byte
+	TTL() time.Duration
+}
+
 // Load loads configuration from environment variables file
 func Load(path string) error {
 	err := godotenv.Load(path)

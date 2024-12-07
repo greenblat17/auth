@@ -6,7 +6,9 @@ import (
 	"net"
 
 	"github.com/greenblat17/auth/internal/interceptor"
-	desc "github.com/greenblat17/auth/pkg/user_v1"
+	descAccess "github.com/greenblat17/auth/pkg/access_v1"
+	descAuth "github.com/greenblat17/auth/pkg/auth_v1"
+	descUser "github.com/greenblat17/auth/pkg/user_v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
@@ -20,7 +22,9 @@ func (a *App) initGRPCServer(ctx context.Context) error {
 
 	reflection.Register(a.grpcServer)
 
-	desc.RegisterUserV1Server(a.grpcServer, a.serviceProvider.UserImplementation(ctx))
+	descUser.RegisterUserV1Server(a.grpcServer, a.serviceProvider.UserImplementation(ctx))
+	descAuth.RegisterAuthV1Server(a.grpcServer, a.serviceProvider.AuthImplementation(ctx))
+	descAccess.RegisterAccessV1Server(a.grpcServer, a.serviceProvider.AccessImplementation(ctx))
 
 	return nil
 }

@@ -2,6 +2,7 @@ package pg
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -113,9 +114,38 @@ func (r *repo) Get(ctx context.Context, id int64) (*model.User, error) {
 	var user modelRepo.User
 	err = r.db.DB().ScanOneContext(ctx, &user, q, args...)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, repository.ErrUserNotFound
 		}
+		return nil, err
+	}
+
+	return converter.ToUserFromRepo(&user), nil
+}
+
+func (r *repo) GetByUsername(ctx context.Context, username string) (*model.User, error) {
+	sqb := sq.Select(idColumn, nameColumn, emailColumn, passwordColumn, roleColumn, createdAtColumn, updatedAtColumn).
+		From(userTable).
+		Where(sq.Eq{nameColumn: username}).
+		PlaceholderFormat(sq.Dollar)
+
+	query, args, err := sqb.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	q := db.Query{
+		Name:     "UserRepository.GetByUsername",
+		QueryRaw: query,
+	}
+
+	var user modelRepo.User
+	err = r.db.DB().ScanOneContext(ctx, &user, q, args...)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, repository.ErrUserNotFound
+		}
+
 		return nil, err
 	}
 
