@@ -2,6 +2,7 @@ package pg
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -94,11 +95,12 @@ func (r *repo) Update(ctx context.Context, user *model.User) error {
 	return nil
 }
 
-func (r *repo) Get(ctx context.Context, id int64) (*model.User, error) {
+func (r *repo) Get(ctx context.Context, filter *model.UserFilter) (*model.User, error) {
 	sqb := sq.Select(idColumn, nameColumn, emailColumn, passwordColumn, roleColumn, createdAtColumn, updatedAtColumn).
 		From(userTable).
-		Where(sq.Eq{idColumn: id}).
 		PlaceholderFormat(sq.Dollar)
+
+	sqb = applyFilter(sqb, filter)
 
 	query, args, err := sqb.ToSql()
 	if err != nil {
@@ -113,7 +115,7 @@ func (r *repo) Get(ctx context.Context, id int64) (*model.User, error) {
 	var user modelRepo.User
 	err = r.db.DB().ScanOneContext(ctx, &user, q, args...)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, repository.ErrUserNotFound
 		}
 		return nil, err
@@ -148,4 +150,19 @@ func (r *repo) Delete(ctx context.Context, id int64) error {
 	}
 
 	return nil
+}
+
+func applyFilter(sqb sq.SelectBuilder, filter *model.UserFilter) sq.SelectBuilder {
+	if filter == nil {
+		return sqb
+	}
+
+	if len(filter.Name) != 0 {
+		sqb = sqb.Where(sq.Eq{nameColumn: filter.Name})
+	}
+	if filter.ID != 0 {
+		sqb = sqb.Where(sq.Eq{idColumn: filter.ID})
+	}
+
+	return sqb
 }
