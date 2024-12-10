@@ -19,8 +19,7 @@ var (
 type UserRepository interface {
 	Create(ctx context.Context, user *model.UserInfo) (int64, error)
 	Update(ctx context.Context, user *model.User) error
-	Get(ctx context.Context, id int64) (*model.User, error)
-	GetByUsername(ctx context.Context, username string) (*model.User, error)
+	Get(ctx context.Context, filter *model.UserFilter) (*model.User, error)
 	Delete(ctx context.Context, id int64) error
 }
 

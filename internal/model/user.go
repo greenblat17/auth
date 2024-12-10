@@ -25,6 +25,12 @@ type UserInfo struct {
 	Role     string
 }
 
+// UserFilter model for filtration data from db
+type UserFilter struct {
+	ID   int64
+	Name string
+}
+
 // IsEmptyName check if username is empty
 func (u *UserInfo) IsEmptyName() bool {
 	return u.Name == ""

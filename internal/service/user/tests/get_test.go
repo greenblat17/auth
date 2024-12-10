@@ -40,6 +40,10 @@ func TestGet(t *testing.T) {
 
 		id int64 = 1
 
+		filter = &model.UserFilter{
+			ID: id,
+		}
+
 		user = &model.User{
 			ID: id,
 		}
@@ -94,7 +98,7 @@ func TestGet(t *testing.T) {
 			},
 			mockFunc: func(mc *minimock.Controller) deps {
 				userRepoMock := mocks.NewUserRepositoryMock(mc)
-				userRepoMock.GetMock.Expect(ctx, id).Return(user, nil)
+				userRepoMock.GetMock.Expect(ctx, filter).Return(user, nil)
 
 				userCacheRepoMock := mocks.NewUserCacheRepositoryMock(mc)
 				userCacheRepoMock.GetMock.Expect(ctx, id).Return(nil, assert.AnError)
@@ -127,7 +131,7 @@ func TestGet(t *testing.T) {
 			},
 			mockFunc: func(mc *minimock.Controller) deps {
 				userRepoMock := mocks.NewUserRepositoryMock(mc)
-				userRepoMock.GetMock.Expect(ctx, id).Return(nil, assert.AnError)
+				userRepoMock.GetMock.Expect(ctx, filter).Return(nil, assert.AnError)
 
 				userCacheRepoMock := mocks.NewUserCacheRepositoryMock(mc)
 				userCacheRepoMock.GetMock.Expect(ctx, id).Return(nil, assert.AnError)
@@ -158,7 +162,7 @@ func TestGet(t *testing.T) {
 			},
 			mockFunc: func(mc *minimock.Controller) deps {
 				userRepoMock := mocks.NewUserRepositoryMock(mc)
-				userRepoMock.GetMock.Expect(ctx, id).Return(user, nil)
+				userRepoMock.GetMock.Expect(ctx, filter).Return(user, nil)
 
 				userCacheRepoMock := mocks.NewUserCacheRepositoryMock(mc)
 				userCacheRepoMock.GetMock.Expect(ctx, id).Return(nil, assert.AnError)
@@ -192,7 +196,7 @@ func TestGet(t *testing.T) {
 			},
 			mockFunc: func(mc *minimock.Controller) deps {
 				userRepoMock := mocks.NewUserRepositoryMock(mc)
-				userRepoMock.GetMock.Expect(ctx, id).Return(user, nil)
+				userRepoMock.GetMock.Expect(ctx, filter).Return(user, nil)
 
 				userCacheRepoMock := mocks.NewUserCacheRepositoryMock(mc)
 				userCacheRepoMock.GetMock.Expect(ctx, id).Return(nil, assert.AnError)
@@ -224,7 +228,7 @@ func TestGet(t *testing.T) {
 			},
 			mockFunc: func(mc *minimock.Controller) deps {
 				userRepoMock := mocks.NewUserRepositoryMock(mc)
-				userRepoMock.GetMock.Expect(ctx, id).Return(user, nil)
+				userRepoMock.GetMock.Expect(ctx, filter).Return(user, nil)
 
 				userCacheRepoMock := mocks.NewUserCacheRepositoryMock(mc)
 				userCacheRepoMock.GetMock.Expect(ctx, id).Return(nil, assert.AnError)

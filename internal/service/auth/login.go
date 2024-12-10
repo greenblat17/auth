@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 
+	"github.com/greenblat17/auth/internal/model"
 	"github.com/greenblat17/auth/pkg/auth"
 )
 
 func (s *service) Login(ctx context.Context, username, password string) (string, error) {
-	user, err := s.userRepository.GetByUsername(ctx, username)
+	user, err := s.userRepository.Get(ctx, &model.UserFilter{Name: username})
 	if err != nil {
 		return "", err
 	}

@@ -16,7 +16,7 @@ func (s *service) Get(ctx context.Context, id int64) (*model.User, error) {
 	err = s.txManager.ReadCommited(ctx, func(ctx context.Context) error {
 		var errTx error
 
-		user, errTx = s.userRepository.Get(ctx, id)
+		user, errTx = s.userRepository.Get(ctx, &model.UserFilter{ID: id})
 		if errTx != nil {
 			return errTx
 		}
