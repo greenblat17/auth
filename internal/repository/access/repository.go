@@ -46,7 +46,7 @@ func (r *accessRuleRepo) GetByEndpoint(ctx context.Context, endpoint string) (*m
 	}
 
 	var rules []*modelRepo.AccessRule
-	err = r.db.DB().ScanOneContext(ctx, &rules, q, args...)
+	err = r.db.DB().ScanAllContext(ctx, &rules, q, args...)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, repository.ErrRuleNotFound
